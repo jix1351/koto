@@ -5,23 +5,22 @@ from typing import List, Union
 
 import aiogram
 
+from aiogram.utils.markdown import hlink
 from aiogram.types import PhotoSize,video
 from aiogram.dispatcher.handler import CancelHandler
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher.middlewares import BaseMiddleware
 from aiogram.types import MediaGroup
+from info import *
 
 from random import choice
 
-import configparser
-
-settings_config = configparser.ConfigParser()
-settings_config.read("settings.ini")
-
-USER_ADMIN_ID = settings_config["Application"]["USER_ADMIN_ID"]
-BOT_TOKEN = settings_config["Application"]["BOT_TOKEN"]
-CHANNEL_ID = settings_config["Application"]["CHANNEL_ID"]
-
+"""
+USER_ADMIN_ID
+BOT_TOKEN
+CHANNEL_ID
+"""
+BY_LINK = hlink('by', 'https://t.me/nsfwkotobot')
 executor = aiogram.executor
 bot = aiogram.Bot(token=BOT_TOKEN)
 dp = aiogram.Dispatcher(bot, storage=MemoryStorage())
@@ -114,27 +113,21 @@ async def media_group_inputer(data, album):
         await data.answer('Вы в бане.')
         return True
 
-    # user = data['from']['username'] if data['from']['username'] else data['from']['first_name']
     user_first_name = data['from']['first_name']
 
     media_group = MediaGroup()
-    # content_groups[album[-1].media_group_id] = []
 
     for obj in album:
         if obj.photo:
             file_id = obj.photo[-1].file_id
-            # content_groups[album[-1].media_group_id].append(obj.photo[-1])
         else:
             file_id = obj[obj.content_type].file_id
-            # content_groups[album[-1].media_group_id].append(obj[obj.content_type])
 
         try:
             if len(media_group.to_python()) == 1:
                 media_group.attach({"media": file_id, "type": obj.content_type,
-                                    # "caption": data.caption+f"\nby: {'@' if data['from']['username'] else ''}"+user\
-                                    #     if data.caption else f"by: {'@' if data['from']['username'] else ''}"+user})
-                                    "caption": data.caption + f"\nby: {user_first_name}" \
-                                        if data.caption else f"by: {user_first_name}"})
+                                    "caption": data.caption + f"\nby:{user_first_name}" \
+                                        if data.caption else f"by:{user_first_name}"})
             else:
                 media_group.attach({"media": file_id, "type": obj.content_type})
 
@@ -154,7 +147,7 @@ async def media_group_inputer(data, album):
         else:
             content_groups[content[-1].media_group_id].append((obj[obj.content_type],obj.message_id,obj.caption))
 
-    yes_no = await bot.send_message(USER_ADMIN_ID,text='Выбор:',reply_markup=choose,reply_to_message_id=content[-1].message_id)
+    yes_no = await bot.send_message(USER_ADMIN_ID,text='Выбор:',reply_markup=choose,reply_to_message_id=content[-1].message_id,parse_mode="HTML")
 
 
 @dp.callback_query_handler(text='yes_group')
@@ -173,7 +166,7 @@ async def yes_group(callback):
                 content_type = 'video'
             if len(media_group.to_python()) == 1:
                 media_group.attach({"media": file_id, "type": content_type,
-                                    "caption": obj[2]})
+                    "caption": f"{BY_LINK}: "+obj[2][3:], "parse_mode":"HTML"})
             else:
                 media_group.attach({"media": file_id, "type": content_type})
         except ValueError:
@@ -211,46 +204,27 @@ async def inputer(data):
         await data.answer('Вы в бане.')
         return
 
-    # user = data['from']['username'] if data['from']['username'] else data['from']['first_name']
     user = data['from']['first_name']
     choose = aiogram.types.InlineKeyboardMarkup(row_width=2)
     choose.add(aiogram.types.InlineKeyboardButton(text='[✔]Да', callback_data='yes'),
                aiogram.types.InlineKeyboardButton(text='[❌]Нет', callback_data='false'))
     if data.photo:
         await bot.send_photo(USER_ADMIN_ID,photo=data.photo[-1].file_id,
-             # caption=data.caption+f"\nby: {'@' if data['from']['username'] else ''}"+user if data.caption else f"by: {'@' if data['from']['username'] else ''}"+user,reply_markup=choose)
-             caption=data.caption + f"\nby: " + user if data.caption else f"by: " + user,reply_markup=choose)
+             caption=data.caption + f"\n{BY_LINK}: " + user if data.caption else f"{BY_LINK}: " + user,reply_markup=choose,parse_mode="HTML")
     else:
         await bot.send_animation(USER_ADMIN_ID,animation=data[data.content_type]['file_id'],
-             # caption=data.caption + f"\nby: {'@' if data['from']['username'] else ''}" + user if data.caption else f"by: {'@' if data['from']['username'] else ''}"+user,reply_markup=choose)
-             caption=data.caption + f"\nby: " + user if data.caption else f"by: " + user, reply_markup=choose)
+             caption=data.caption + f"\n{BY_LINK}: " + user if data.caption else f"{BY_LINK}: " + user, reply_markup=choose,parse_mode="HTML")
 
 
 @dp.callback_query_handler(text='yes')
 async def yes(callback):
     await bot.answer_callback_query(callback.id, text=choice(yes_list), show_alert=False)
-    # if callback.message.reply_to_message:
-    #     if callback.message.reply_to_message.photo:
-    #         await bot.send_photo(CHANNEL_ID, photo=callback.message.reply_to_message.photo[-1].file_id,
-    #                              caption=callback.message.reply_to_message.caption)
-    #         await bot.send_photo(callback['from']['id'],photo=callback.message.reply_to_message.photo[-1].file_id,
-    #                              caption='Ваш пост был опубликован!')
-    #     else:
-    #         await bot.send_animation(CHANNEL_ID,
-    #                                 animation=callback.message.reply_to_message[callback.message.reply_to_message.content_type]['file_id'],
-    #                                 caption=callback.message.caption)
-    #         await bot.send_animation(CHANNEL_ID,
-    #                                 animation=callback.message.reply_to_message[callback.message.reply_to_message.content_type]['file_id'],
-    #                                 caption='Ваш пост был опубликован!')
-    #     await callback.message.reply_to_message.delete()
-    #     await callback.message.delete()
-    # else:
     if callback.message.photo:
-        await bot.send_photo(CHANNEL_ID, photo=callback.message.photo[-1].file_id,caption=callback.message.caption)
+        await bot.send_photo(CHANNEL_ID, photo=callback.message.photo[-1].file_id,caption=f'{BY_LINK}: '+callback.message.caption[3:], parse_mode="HTML")
         await bot.send_photo(callback['from']['id'], photo=callback.message.photo[-1].file_id,
                              caption='Ваш пост был опубликован!')
     else:
-        await bot.send_animation(CHANNEL_ID, animation=callback.message[callback.message.content_type]['file_id'],caption=callback.message.caption)
+        await bot.send_animation(CHANNEL_ID, animation=callback.message[callback.message.content_type]['file_id'],caption=f'{BY_LINK}: '+callback.message.caption[3:], parse_mode="HTML")
         await bot.send_animation(callback['from']['id'],
                                  animation=callback.message[callback.message.content_type]['file_id'],
                                  caption='Ваш пост был опубликован!')
