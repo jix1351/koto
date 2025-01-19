@@ -1,7 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 USER_ADMIN_ID = 'int'
-#USER_ADMIN_ID = 'int'
 BOT_TOKEN = 'int:str'
 CHANNEL_ID = '-100'+'int' # менять число после '-100'
-#CHANNEL_ID = '-100'+'int'

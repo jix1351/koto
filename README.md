@@ -7,7 +7,7 @@
 ```
 pip install -r requirements.txt
 ```
-3) Изменить файл settings.ini и info.py и убрать .example
+3) Изменить файл info.py и убрать .example
 4) Запустить файл main.py
 ```
 python main.py
